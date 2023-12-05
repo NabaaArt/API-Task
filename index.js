@@ -39,32 +39,54 @@ app.post("/user", (req, res) => {
   res.send({ success: true });
 });
 
-app.put("/user/:id", (req, res) => {
+
+
+app.put("/user/:id", async (req, res) => {
   let id = req.params.id;
-  let url = `http://localhost:3000/user/${id}`;
-  let newUserData = {
-    id: 11,
-    name: "nabaa",
-    username: "nabaa0508",
-    email: "nabaa@gmail.com",
-  };
-  let options = {
-    method: "PUT",
-    body: JSON.stringify(newUserData),
-  };
-  fetch(url, options).then((res) => console.log(res.status));
-  res.send({ success: true });
+  let name = req.body.name;
+  let username = req.body.username;
+  let email = req.body.email;
+
+  try {
+    const data = fs.readFileSync("./users.json", "utf8");
+
+    let newUserData = {
+      name,
+      username,
+      email,
+    };
+    users.push(newUserData);
+    await fs.writeFileSync("./user/:id", JSON.stringify(users));
+    res
+      .status(200)
+      .json({ success: true, message: "Data updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
 });
 
-app.delete("/user/:id", (req, res) => {
-  let id = req.params.id;
-  let url = `http://localhost:3000/user/${id}`;
-  let options = {
-    method: "DELETE",
-  };
-  fetch(url, options).then((res) => console.log(res.status));
+app.delete("/user/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    let users = JSON.parse(await fs.readFile('./users.json', 'utf8'));
 
-  res.send({ success: true });
+    const userIndex = users.findIndex((user) => user.id === id);
+
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    users.splice(userIndex, 1);
+
+    
+    await fs.writeFile('./users.json', JSON.stringify(users));
+
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 app.listen(port, () => {
